@@ -7,12 +7,12 @@ import cliSpinners from 'cli-spinners';
 // Create a new spinner instance
 const spinner = ora({
     text: 'Loading...',
-    spinner: cliSpinners.dots12,
+    spinner: cliSpinners.dots,
   });
 
   
 async function main() {
-    console.log(colors.bold.white('AI here, what\'s up ?'));
+    console.log(colors.bold.white('What\'s up ?'));
 
     const chatHistory = []; //Store conv history
 
@@ -21,31 +21,35 @@ async function main() {
 
         try {
 
-            const messages = chatHistory.map(([role, content]) => ({role, content}))
-            messages.push({role: 'user', content: userInput})
-
-            spinner.start();
-            //Call API with user input
-            const completion = await openai.createChatCompletion({
-                model: 'gpt-3.5-turbo',
-                messages: messages
-            })
-
-            spinner.stop()
-
-            //Get completion text
-            const completionText = completion.data.choices[0].message.content;
-
-
-            if (userInput.toLowerCase() === 'exit') {
+            if (userInput === 'cls' || userInput == 'clear') {
+                process.stdout.write('\x1Bc');
+            } else {
+                const messages = chatHistory.map(([role, content]) => ({role, content}))
+                messages.push({role: 'user', content: userInput})
+    
+                spinner.start();
+                //Call API with user input
+                const completion = await openai.createChatCompletion({
+                    model: 'gpt-3.5-turbo',
+                    messages: messages
+                })
+    
+                spinner.stop()
+    
+                //Get completion text
+                const completionText = completion.data.choices[0].message.content;
+    
+    
+                if (userInput.toLowerCase() === 'exit') {
+                    console.log(colors.white('\nAI: ' + completionText));
+                    return;
+                }
                 console.log(colors.white('\nAI: ' + completionText));
-                return;
+                
+                //Update history with user input and chat response
+                chatHistory.push(['user', userInput])
+                chatHistory.push(['assistant', completionText])
             }
-            console.log(colors.white('\nAI: ' + completionText));
-            
-            //Update history with user input and chat response
-            chatHistory.push(['user', userInput])
-            chatHistory.push(['assistant', completionText])
 
         } catch (error) {
             console.log(colors.red(error))
